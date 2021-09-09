@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+</head>
+
+<body>
+    <div id="div3d"></div>
+</body>
+
+<script type="module">
+    import * as THING from './libs/thing.module.js';
+    import * as dat from './libs/dat.gui.module.js';
+    const app = new THING.App();
+    app.background = 'gray';
+    app.camera.position = [-17566.54673139942, -18321.415269202786, 25697.67946168546];
+    app.camera.near=0.001;
+    app.camera.far=100000;
+    var geojsonData;
+
+    async function loadFile(url) {
+        const req = await fetch(url);
+        return req.text();
+    }
+    function parseData(text) {
+        geojsonData = JSON.parse(text);
+    }
+    loadFile('http://www.3dmmd.cn:8083/static/testData/boundary.json')
+        .then(parseData)
+        .then(addLayer);
+
+    function addLayer() {
+        const uvType ="uAround";//"tiled" or  "uAround"
+        var Options = function() {
+            this.uvType ="uAround";
+            this.xRepeat =1000;
+            this.yRepeat =10;
+        };
+        var options = new Options();
+        const layer2 = new THING.EXTEND.BoundaryLayer(geojsonData); // TODO
+        layer2.style.color="red";
+        layer2.style.image= new THING.ImageTexture("./img/UV_Grid_Sm.jpg");
+        layer2.style.sideType = THING.SideType.Double;
+
+        const gui = new dat.GUI();
+        gui.add(options,"uvType",["tiled", "uAround"]).onChange(function (type) {
+            layer2.setUvType(type);
+            if(type =="tiled"  )  
+            { 
+                layer2.style.repeat=[1,1];
+                options.yRepeat=1;
+                options.xRepeat=1;
+            }
+            if(type =="uAround" )  
+            { 
+                layer2.style.repeat=[layer2.fenceLength/20,10];
+                options.xRepeat=layer2.fenceLength/20;
+                options.yRepeat=10;
+            }
+        }).listen()
+        gui.add(options,"xRepeat",1,layer2.fenceLength/20).onChange(function name(params) {
+            layer2.style.repeat=[params,options.yRepeat];
+            if(options.uvType =="tiled"){
+                options.yRepeat=1;
+                options.xRepeat=1;
+                layer2.style.repeat=[options.xRepeat,options.yRepeat];
+            }
+        }).listen()
+        gui.add(options,"yRepeat",1,10).onChange(function name(params) {
+            layer2.style.repeat=[options.xRepeat,params];
+            if(options.uvType =="tiled"){
+                options.yRepeat=1;
+                options.xRepeat=1;
+                layer2.style.repeat=[options.xRepeat,options.yRepeat];
+            }
+        }).listen()
+        
+        
+    }
+</script>
+
+</html>
