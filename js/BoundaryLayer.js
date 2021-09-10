@@ -23,8 +23,10 @@ export class BoundaryLayer extends BaseObject3D {
 	}
 
 	setUvType(type) {
+		console.log(type);
+		// console.log(UVModeType.Stretch);
 		if (this._UVModeType !== type) {
-			if (type === UVModeType.Tile || type === UVModeType.Stretch) {
+			if (type === "Tile" || type === "Stretch") {
 				for (let i = 0; i < this._node.length; i++) { this._node[i].swapAttribute('uv', 'uv2') }
 				this._UVModeType = type;
 			}

@@ -28,8 +28,12 @@
         const boundary = new BoundaryLayer(geojsonData); // TODO
         console.log(geojsonData);
         boundary.style.image= new THING.ImageTexture("./img/UV_Grid_Sm.jpg");
-        boundary.style.sideType = THING.SideType.Double;        
+        boundary.style.sideType = THING.SideType.Double;   
+        boundary.setUvType("Stretch");   
     }
+
+    const gui = new dat.GUI();
+
 
     // 初始化辅助线
     initHelperLines();
@@ -56,6 +60,7 @@
             }
         });
     }
+
 </script>
 
 </html>
