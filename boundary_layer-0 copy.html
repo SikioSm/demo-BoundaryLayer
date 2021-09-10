@@ -22,13 +22,25 @@
     function parseData(text) {
         geojsonData = JSON.parse(text);
     }
-    loadFile('./json/boundary.json').then(parseData).then(addBoundary);
+    loadFile('./json/boundary2.json').then(parseData).then(addLayer);
 
-    function addBoundary() {        
-        const boundary = new BoundaryLayer(geojsonData); // TODO
+    function addLayer() {
+        // const uvType ="uAround";//"tiled" or  "uAround"
+        
+        var Options = function() {
+            this.uvType ="uAround";
+            this.xRepeat =1;
+            this.yRepeat =1;
+        };
+        var options = new Options();
+        
+        const layer2 = new BoundaryLayer(geojsonData); // TODO
         console.log(geojsonData);
-        boundary.style.image= new THING.ImageTexture("./img/UV_Grid_Sm.jpg");
-        boundary.style.sideType = THING.SideType.Double;        
+        // layer2.style.color="red";
+        layer2.style.image= new THING.ImageTexture("./img/UV_Grid_Sm.jpg");
+        layer2.style.sideType = THING.SideType.Double;
+        
+    
     }
 
     // 初始化辅助线

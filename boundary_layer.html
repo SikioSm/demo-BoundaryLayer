@@ -20,29 +20,7 @@
     app.camera.near=0.001;
     app.camera.far=100000;
     var geojsonData;
-
-    var box = new THING.Box(0.3, 3, 10);
-    box.position = [100,50,100];
     
-    // 环境光对象
-    var ambientLight = {
-        intensity : 1.0,
-        color: '16777215',
-    };
-    app.scene.ambientLight.color=ambientLight.color;
-    app.scene.ambientLight.intensity=ambientLight.intensity;
-
-    // 主灯光对象
-    var mainLight = {
-        intensity : 0.5,
-        color: '16777215',
-        visible:true
-    };
-    app.scene.mainLight.color=mainLight.color;
-    app.scene.mainLight.intensity=mainLight.intensity;
-    app.scene.mainLight.helper.visible=mainLight.visible;
-
-    console.log(THING.Wall);
     async function loadFile(url) {
         const req = await fetch(url);
         return req.text();
@@ -54,7 +32,7 @@
         .then(addLayer);
 
     function addLayer() {
-        const uvType =""; //"tiled"平铺 or "uAround"
+        // const uvType =""; //"tiled"平铺 or "uAround"
         var Options = function() {
             this.uvType ="uAround";
             this.xRepeat = 1;
@@ -62,10 +40,10 @@
         };
         var options = new Options();
         const layer2= new THING.EXTEND.BoundaryLayer(geojsonData); // TODO
-        // layer2.style.color="red";
+        layer2.style.color="red";
         layer2.style.image= new THING.ImageTexture("./img/UV_Grid_Sm.jpg");
         layer2.style.sideType = THING.SideType.Double;
-        layer2.setUvType("tiled");
+
         // layer2.style.repeat = [0.1,0.1];
         // console.log(layer2.style);
 
@@ -103,31 +81,31 @@
         // })        
         
     }
-    initHelperLines();
-    function initHelperLines(){
-    let AxesXLine = new THING.PixelLine({
-        name: 'AxesX',
-        selfPoints: [[0,0,0],[2000,0,0]],
-        style:{
-          color:'red'
-        }
-    });
-    let AxesYLine = new THING.PixelLine({
-        name: 'AxesY',
-        selfPoints: [[0,0,0],[0,2000,0]],
-        style:{
-          color:'green'
-        }
-    });
-    let AxesZLine = new THING.PixelLine({
-        name: 'AxesZ',
-        selfPoints: [[0,0,0],[0,0,2000]],
-        style:{
-          color:'blue'
-        }
-    });
+//     initHelperLines();
+//     function initHelperLines(){
+//     let AxesXLine = new THING.PixelLine({
+//         name: 'AxesX',
+//         selfPoints: [[0,0,0],[2000,0,0]],
+//         style:{
+//           color:'red'
+//         }
+//     });
+//     let AxesYLine = new THING.PixelLine({
+//         name: 'AxesY',
+//         selfPoints: [[0,0,0],[0,2000,0]],
+//         style:{
+//           color:'green'
+//         }
+//     });
+//     let AxesZLine = new THING.PixelLine({
+//         name: 'AxesZ',
+//         selfPoints: [[0,0,0],[0,0,2000]],
+//         style:{
+//           color:'blue'
+//         }
+//     });
 
-  }
+//   }
 
 </script>
 

@@ -1,4 +1,4 @@
-import { MathUtils } from "@uino/thing";
+import { MathUtils } from '../libs/thing.module.js';
 
 class uvGenerator {
 
@@ -7,38 +7,66 @@ class uvGenerator {
 		this.fenceLengthNorm = null;
 		this.lengthSum = 0;
 	}
+
+	// 目前需要提供两套模式，一种平铺，1:1的贴
+	// 第二种图是直接从0到1，直接拉伸即可
 	prepare(vertices) {
 		var wallContour = vertices;
 
 		var u_list = [], u_list2 = [];
 		var lengthSum = 0;
 		var len = wallContour.length * 0.5;// FENCE UPPER AND DOWNER
-		for (var i = 0; i < len; i = i + 3) {
+		for (var i = 0; i < len -3; i = i + 3) {
 			var dx = wallContour[(i + 3) % len] - wallContour[i];
 			var dy = wallContour[(i + 3) % len + 1] - wallContour[i + 1];
 			var dz = wallContour[(i + 3) % len + 2] - wallContour[i + 2];
+
 			var segmentLength = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
 			u_list.push(lengthSum);
-			u_list2.push(lengthSum);
+			// u_list2.push(lengthSum);
 			lengthSum += segmentLength;
 		}
 
 		this.lengthSum = lengthSum;
 		this.normalizeArray(u_list, lengthSum);
 		this.fenceLengthNorm = u_list;
+
 		this.fenceLengthCache = u_list2;
+	
 	}
+
+	InitUV(vertices){			
+		var u_list = []
+		var lengthSum = 0;
+		var len = vertices.length * 0.5;// FENCE UPPER AND DOWNER
+
+		for (var i = 0; i < len - 3; i = i + 3) {
+			var dx = vertices[(i + 3) % len] - vertices[i];
+			var dy = vertices[(i + 3) % len + 1] - vertices[i + 1];
+			var dz = vertices[(i + 3) % len + 2] - vertices[i + 2];
+
+			var segmentLength = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+			u_list.push(lengthSum);
+			lengthSum += segmentLength;
+		}
+
+		this.lengthSum = lengthSum;
+		this.normalizeArray(u_list, lengthSum);
+		this.uv = u_list;
+	}
+
 	normalizeArray(ls, v) {
 		var len = ls.length;
 		for (var i = 0; i < len; i++) {
 			ls[i] /= v;
 		}
-		if (ls[len - 1] != 1) { ls.push(1.);  }
+		if (ls[len - 1] != 1) { ls.push(1);  }
 		return ls;
 	}
 
 }
-
 
 export class BoundaryVertexData {
 
@@ -55,8 +83,8 @@ export class BoundaryVertexData {
 		}
 
 		const scope = this;
-		scope.fenceLength = 0;
-		scope.fenceHeight = parameters.extrudeHeight;
+		// scope.fenceLength = 0;
+		// scope.fenceHeight = parameters.extrudeHeight;
 
 		var boundary = parameters.boundary;
 
@@ -72,9 +100,9 @@ export class BoundaryVertexData {
 			const vertices = [];
 			const normals = [];
 			const uvs = [], uvs2 = [];
-			// for (var j = 0; j < boundary.length; j++) {
+
 			var polygon1 = boundary;
-			var len = polygon1.length - 1;// polygon1 首尾相连，所以总长度减1
+			var len = polygon1.length;// polygon1 首尾相连，所以总长度减1
 
 			for (let i = 0; i < len; i++) {
 				vertices.push(polygon1[i][0][0]);
@@ -90,77 +118,100 @@ export class BoundaryVertexData {
 				vertices.push((excudePointy));
 				vertices.push((excudePointz));
 			}
+
+
+
+			// 计算uv
 			uvGenerator1.prepare(vertices);
-			scope.fenceLength = uvGenerator1.lengthSum;
+			// scope.fenceLength = uvGenerator1.lengthSum;
+			// 一遍存顶
 			for (let i = 0; i < len; i++) {
 				uvs.push(uvGenerator1.fenceLengthNorm[i]);
 				uvs.push(0);
 				uvs2.push(uvGenerator1.fenceLengthCache[i]);
 				uvs2.push(0);
+				console.log(uvGenerator1.fenceLengthCache[i]+","+0);
+				if(uvGenerator1.fenceLengthCache[i] === undefined){
+					console.log(i);
+				}
+
 			}
+			// 一遍存底
 			for (let i = 0; i < len; i++) {
 				uvs.push(uvGenerator1.fenceLengthNorm[i]);
 				uvs.push(1);
 				uvs2.push(uvGenerator1.fenceLengthCache[i]);
-				uvs2.push(parameters.extrudeHeight);
+				uvs2.push(1);
 			}
+			uvGenerator1.InitUV(vertices);
 
+
+			// // 一遍存顶
+			// for (let i = 0; i < len; i++) {
+			// 	uvs2.push(uvGenerator1.fenceLengthNorm[i]);
+			// 	uvs2.push(0);
+			// 	uvs.push(uvGenerator1.fenceLengthCache[i]);
+			// 	uvs.push(0);
+			// 	// console.log(uvGenerator1.fenceLengthNorm[i]+","+0+"\n"+uvGenerator1.fenceLengthCache[i]+","+0);
+			// }
+			// // 一遍存底
+			// for (let i = 0; i < len; i++) {
+			// 	uvs2.push(uvGenerator1.fenceLengthNorm[i]);
+			// 	uvs2.push(1);
+			// 	uvs.push(uvGenerator1.fenceLengthCache[i]);
+			// 	uvs.push(1);
+			// }
+
+			// 计算法向量和索引
 			for (let iy = 0; iy < 1; iy++) {
-				var gridX1 = len ;// polygon1 首尾相连，所以总长度减1
-				for (let ix = 0; ix < gridX1; ix++) {
+				var gridX1 = len;// polygon1 首尾相连，所以总长度减1
+				for (let ix = 0; ix < gridX1 - 1; ix++) {
 					const a = ix + gridX1 * iy;
 					const b = ix + gridX1 * (iy + 1);
 					let c, d;
-					if (ix == gridX1 - 1) {
-						c = gridX1 * (iy + 1);
-						d = gridX1 * iy;
-					}
-					else {
-						c = (ix + 1) + gridX1 * (iy + 1);
-						d = (ix + 1) + gridX1 * iy;
 
-						var vector1 = MathUtils.createVec3();
-						var vector2 = MathUtils.createVec3();
-						MathUtils.vec3.set(vector1, vertices[b * 3] - vertices[a * 3], vertices[b * 3 + 1] - vertices[a * 3 + 1], vertices[b * 3 + 2] - vertices[a * 3 + 2]);
-						MathUtils.vec3.set(vector2, vertices[d * 3] - vertices[a * 3], vertices[d * 3 + 1] - vertices[a * 3 + 1], vertices[d * 3 + 2] - vertices[a * 3 + 2]);
-						MathUtils.vec3.normalize(vector1, vector1);
-						MathUtils.vec3.normalize(vector2, vector2);
-						let normalVec = MathUtils.createVec3();
-						MathUtils.vec3.cross(normalVec, vector1, vector2);
-						MathUtils.vec3.normalize(normalVec, normalVec);
-						normals[a * 3] = normalVec[0];
-						normals[a * 3 + 1] = normalVec[1];
-						normals[a * 3 + 2] = normalVec[2];
+					c = (ix + 1) + gridX1 * (iy + 1);
+					d = (ix + 1) + gridX1 * iy;
 
-						normals[b * 3] = normalVec[0];
-						normals[b * 3 + 1] = normalVec[1];
-						normals[b * 3 + 2] = normalVec[2];
+					var vector1 = MathUtils.createVec3();
+					var vector2 = MathUtils.createVec3();
+					MathUtils.vec3.set(vector1, vertices[b * 3] - vertices[a * 3], vertices[b * 3 + 1] - vertices[a * 3 + 1], vertices[b * 3 + 2] - vertices[a * 3 + 2]);
+					MathUtils.vec3.set(vector2, vertices[d * 3] - vertices[a * 3], vertices[d * 3 + 1] - vertices[a * 3 + 1], vertices[d * 3 + 2] - vertices[a * 3 + 2]);
+					MathUtils.vec3.normalize(vector1, vector1);
+					MathUtils.vec3.normalize(vector2, vector2);
+					let normalVec = MathUtils.createVec3();
+					MathUtils.vec3.cross(normalVec, vector1, vector2);
+					MathUtils.vec3.normalize(normalVec, normalVec);
+					normals[a * 3] = normalVec[0];
+					normals[a * 3 + 1] = normalVec[1];
+					normals[a * 3 + 2] = normalVec[2];
 
-						normals[d * 3] = normalVec[0];
-						normals[d * 3 + 1] = normalVec[1];
-						normals[d * 3 + 2] = normalVec[2];
+					normals[b * 3] = normalVec[0];
+					normals[b * 3 + 1] = normalVec[1];
+					normals[b * 3 + 2] = normalVec[2];
 
+					normals[d * 3] = normalVec[0];
+					normals[d * 3 + 1] = normalVec[1];
+					normals[d * 3 + 2] = normalVec[2];
 
-						var vector3 = MathUtils.createVec3();
-						var vector4 = MathUtils.createVec3();
-						MathUtils.vec3.set(vector3, vertices[c * 3] - vertices[b * 3], vertices[c * 3 + 1] - vertices[b * 3 + 1], vertices[c * 3 + 2] - vertices[b * 3 + 2]);
-						MathUtils.vec3.set(vector4, vertices[d * 3] - vertices[b * 3], vertices[d * 3 + 1] - vertices[b * 3 + 1], vertices[d * 3 + 2] - vertices[b * 3 + 2]);
-						MathUtils.vec3.normalize(vector3, vector3);
-						MathUtils.vec3.normalize(vector4, vector4);
-						let normalVec2 = MathUtils.createVec3();
-						MathUtils.vec3.cross(normalVec2, vector3, vector4);
-						MathUtils.vec3.normalize(normalVec2, normalVec2);
-						normals[c * 3] = normalVec2[0];
-						normals[c * 3 + 1] = normalVec2[1];
-						normals[c * 3 + 2] = normalVec2[2];
-					}
-
+					var vector3 = MathUtils.createVec3();
+					var vector4 = MathUtils.createVec3();
+					MathUtils.vec3.set(vector3, vertices[c * 3] - vertices[b * 3], vertices[c * 3 + 1] - vertices[b * 3 + 1], vertices[c * 3 + 2] - vertices[b * 3 + 2]);
+					MathUtils.vec3.set(vector4, vertices[d * 3] - vertices[b * 3], vertices[d * 3 + 1] - vertices[b * 3 + 1], vertices[d * 3 + 2] - vertices[b * 3 + 2]);
+					MathUtils.vec3.normalize(vector3, vector3);
+					MathUtils.vec3.normalize(vector4, vector4);
+					let normalVec2 = MathUtils.createVec3();
+					MathUtils.vec3.cross(normalVec2, vector3, vector4);
+					MathUtils.vec3.normalize(normalVec2, normalVec2);
+					normals[c * 3] = normalVec2[0];
+					normals[c * 3 + 1] = normalVec2[1];
+					normals[c * 3 + 2] = normalVec2[2];
 
 					indices.push(a, b, d);
 					indices.push(b, c, d);
 				}
 			}
-			// }
+
 			scope.vertexData = {
 				position: vertices,
 				normal: normals,
@@ -168,6 +219,7 @@ export class BoundaryVertexData {
 				uv2: uvs2,
 				index: indices
 			}
+			// console.log(uvs2);
 		}
 
 		extrudeGeo();
