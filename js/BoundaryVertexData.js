@@ -10,43 +10,19 @@ class uvGenerator {
 
 	// 目前需要提供两套模式，一种平铺，1:1的贴
 	// 第二种图是直接从0到1，直接拉伸即可
-	prepare(vertices) {
-		var wallContour = vertices;
 
-		var u_list = [], u_list2 = [];
-		var lengthSum = 0;
-		var len = wallContour.length * 0.5;// FENCE UPPER AND DOWNER
-		for (var i = 0; i < len -3; i = i + 3) {
-			var dx = wallContour[(i + 3) % len] - wallContour[i];
-			var dy = wallContour[(i + 3) % len + 1] - wallContour[i + 1];
-			var dz = wallContour[(i + 3) % len + 2] - wallContour[i + 2];
+	// 拉伸uv
+	InitUV2(vertices){			
+		let u_list = [];
+		let lengthSum = 0;
+		let len = vertices.length * 0.5;// FENCE UPPER AND DOWNER
 
-			var segmentLength = Math.sqrt(dx * dx + dy * dy + dz * dz);
+		for (let i = 0; i < len - 3; i = i + 3) {
+			let dx = vertices[(i + 3) % len] - vertices[i];
+			let dy = vertices[(i + 3) % len + 1] - vertices[i + 1];
+			let dz = vertices[(i + 3) % len + 2] - vertices[i + 2];
 
-			u_list.push(lengthSum);
-			// u_list2.push(lengthSum);
-			lengthSum += segmentLength;
-		}
-
-		this.lengthSum = lengthSum;
-		this.normalizeArray(u_list, lengthSum);
-		this.fenceLengthNorm = u_list;
-
-		this.fenceLengthCache = u_list2;
-	
-	}
-
-	InitUV(vertices){			
-		var u_list = []
-		var lengthSum = 0;
-		var len = vertices.length * 0.5;// FENCE UPPER AND DOWNER
-
-		for (var i = 0; i < len - 3; i = i + 3) {
-			var dx = vertices[(i + 3) % len] - vertices[i];
-			var dy = vertices[(i + 3) % len + 1] - vertices[i + 1];
-			var dz = vertices[(i + 3) % len + 2] - vertices[i + 2];
-
-			var segmentLength = Math.sqrt(dx * dx + dy * dy + dz * dz);
+			let segmentLength = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
 			u_list.push(lengthSum);
 			lengthSum += segmentLength;
@@ -55,6 +31,39 @@ class uvGenerator {
 		this.lengthSum = lengthSum;
 		this.normalizeArray(u_list, lengthSum);
 		this.uv = u_list;
+		
+		return u_list;
+	}
+
+	// 1:1平铺uv
+	InitUV(vertices , height){	
+		// vertices 是前一半是json提供的点，后一半是按照up方向扩展延伸的点，所以只需要前半部分
+		let len = vertices.length * 0.5;
+		let u_list2 = [];
+		let lengthSum = 0;
+		
+		// 三个为一组，0,3,6,9,12,15...
+		for(let i = 0; i < len ; i = i + 3 ){
+
+			let dx = vertices[(i + 3) % len] - vertices[i];
+			let dy = vertices[(i + 3) % len + 1] - vertices[i + 1];
+			let dz = vertices[(i + 3) % len + 2] - vertices[i + 2];
+			let segmentLength = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+			// 余数
+			let remainder = segmentLength % height ;
+
+			if(segmentLength < height){
+				lengthSum += remainder;
+				u_list2.push(lengthSum);
+			}
+			else if(segmentLength >= height){
+				lengthSum += segmentLength/height;
+				u_list2.push(lengthSum);
+			}			
+		}
+
+		return u_list2;
 	}
 
 	normalizeArray(ls, v) {
@@ -83,8 +92,6 @@ export class BoundaryVertexData {
 		}
 
 		const scope = this;
-		// scope.fenceLength = 0;
-		// scope.fenceHeight = parameters.extrudeHeight;
 
 		var boundary = parameters.boundary;
 
@@ -118,49 +125,24 @@ export class BoundaryVertexData {
 				vertices.push((excudePointy));
 				vertices.push((excudePointz));
 			}
+			
+			let StretchUv = uvGenerator1.InitUV2(vertices);
+			let TileUv = uvGenerator1.InitUV(vertices, parameters.extrudeHeight);
 
-
-
-			// 计算uv
-			uvGenerator1.prepare(vertices);
-			// scope.fenceLength = uvGenerator1.lengthSum;
 			// 一遍存顶
 			for (let i = 0; i < len; i++) {
-				uvs.push(uvGenerator1.fenceLengthNorm[i]);
+				uvs.push(TileUv[i]);
 				uvs.push(0);
-				uvs2.push(uvGenerator1.fenceLengthCache[i]);
+				uvs2.push(StretchUv[i]);
 				uvs2.push(0);
-				console.log(uvGenerator1.fenceLengthCache[i]+","+0);
-				if(uvGenerator1.fenceLengthCache[i] === undefined){
-					console.log(i);
-				}
-
 			}
 			// 一遍存底
 			for (let i = 0; i < len; i++) {
-				uvs.push(uvGenerator1.fenceLengthNorm[i]);
+				uvs.push(TileUv[i]);
 				uvs.push(1);
-				uvs2.push(uvGenerator1.fenceLengthCache[i]);
+				uvs2.push(StretchUv[i]);
 				uvs2.push(1);
 			}
-			uvGenerator1.InitUV(vertices);
-
-
-			// // 一遍存顶
-			// for (let i = 0; i < len; i++) {
-			// 	uvs2.push(uvGenerator1.fenceLengthNorm[i]);
-			// 	uvs2.push(0);
-			// 	uvs.push(uvGenerator1.fenceLengthCache[i]);
-			// 	uvs.push(0);
-			// 	// console.log(uvGenerator1.fenceLengthNorm[i]+","+0+"\n"+uvGenerator1.fenceLengthCache[i]+","+0);
-			// }
-			// // 一遍存底
-			// for (let i = 0; i < len; i++) {
-			// 	uvs2.push(uvGenerator1.fenceLengthNorm[i]);
-			// 	uvs2.push(1);
-			// 	uvs.push(uvGenerator1.fenceLengthCache[i]);
-			// 	uvs.push(1);
-			// }
 
 			// 计算法向量和索引
 			for (let iy = 0; iy < 1; iy++) {
@@ -219,7 +201,7 @@ export class BoundaryVertexData {
 				uv2: uvs2,
 				index: indices
 			}
-			// console.log(uvs2);
+
 		}
 
 		extrudeGeo();
