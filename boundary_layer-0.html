@@ -14,6 +14,9 @@
     app.camera.position = [100, 200, 100];
     app.camera.near = 0.001; app.camera.far = 100000;
 
+    var box = new THING.Box(10,10,10);
+    box.position = [1028.530204469338,0,6700.336646340787];
+
     var geojsonData;
     var boundary;
     async function loadFile(url) {
@@ -27,18 +30,26 @@
 
     function addBoundary() {        
         boundary = new BoundaryLayer(geojsonData); // TODO
-        console.log(geojsonData);
-        boundary.style.image= new THING.ImageTexture("./img/UV_Grid_Sm.jpg");
+        boundary.style.image= new THING.ImageTexture("./images/texture/uv_grid_opengl.jpg");
         boundary.style.sideType = THING.SideType.Double;   
-        boundary.setUvType("Stretch");   
     }
 
     const guiDates = {
         uvType : "Tile",
+        xRepeat : 1,
+        yRepeat : 1,
     }
     const gui = new dat.GUI();
-     gui.add(guiDates,"uvType",["Tile", "Stretch"]).onChange(function (type) {
+    gui.add(guiDates,"uvType",["Tile", "Stretch"]).onChange(function (type) {
         boundary.setUvType(type);
+    });
+
+    gui.add(guiDates,"xRepeat", 1, 100, 0.001 ).onChange(function (value) {
+        boundary.style.repeat = [guiDates.xRepeat, guiDates.yRepeat];
+    });
+
+    gui.add(guiDates,"yRepeat", 1, 10, 0.001 ).onChange(function (value) {
+        boundary.style.repeat = [guiDates.xRepeat, guiDates.yRepeat];
     });
 
 
@@ -67,7 +78,6 @@
             }
         });
     }
-
 </script>
 
 </html>
