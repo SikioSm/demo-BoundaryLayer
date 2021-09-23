@@ -3,17 +3,12 @@ import { MathUtils } from '../libs/thing.module.js';
 class uvGenerator {
 
 	constructor() {
-		this.fenceLengthCache = null;
-		this.fenceLengthNorm = null;
-		this.lengthSum = 0;
+	
 	}
 
-	// 目前需要提供两套模式，一种平铺，1:1的贴
-	// 第二种图是直接从0到1，直接拉伸即可
-
-	// 拉伸uv
+	// Stretch uv
 	InitUV2(vertices){			
-		let u_list = [];
+		let u_list_2 = [];
 		let lengthSum = 0;
 		let len = vertices.length * 0.5;// FENCE UPPER AND DOWNER
 
@@ -24,46 +19,50 @@ class uvGenerator {
 
 			let segmentLength = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
-			u_list.push(lengthSum);
+			u_list_2.push(lengthSum);
 			lengthSum += segmentLength;
 		}
 
 		this.lengthSum = lengthSum;
-		this.normalizeArray(u_list, lengthSum);
-		this.uv = u_list;
+		this.normalizeArray(u_list_2, lengthSum);
+		this.uv = u_list_2;
 		
-		return u_list;
+		return u_list_2;
 	}
 
-	// 1:1平铺uv
+	// 1:1 Tile uv
 	InitUV(vertices , height){	
-		// vertices 是前一半是json提供的点，后一半是按照up方向扩展延伸的点，所以只需要前半部分
 		let len = vertices.length * 0.5;
-		let u_list2 = [];
+		let u_list = [];
 		let lengthSum = 0;
 		
-		// 三个为一组，0,3,6,9,12,15...
-		for(let i = 0; i < len ; i = i + 3 ){
-
-			let dx = vertices[(i + 3) % len] - vertices[i];
-			let dy = vertices[(i + 3) % len + 1] - vertices[i + 1];
-			let dz = vertices[(i + 3) % len + 2] - vertices[i + 2];
+		u_list.push(lengthSum);
+		for(let i = 0; i < len -3; i = i + 3 ){
+			
+			let dx = Math.abs(vertices[i + 3] - vertices[i]) ;
+			let dy = Math.abs(vertices[i + 4] - vertices[i + 1]);
+			let dz = Math.abs(vertices[i + 5] - vertices[i + 2]);
 			let segmentLength = Math.sqrt(dx * dx + dy * dy + dz * dz);
-
-			// 余数
-			let remainder = segmentLength % height ;
+			
+			
+			let remainder = segmentLength % height;
 
 			if(segmentLength < height){
+				if(remainder > 1){
+					remainder = remainder/height;
+				}
 				lengthSum += remainder;
-				u_list2.push(lengthSum);
+				u_list.push(lengthSum);
 			}
 			else if(segmentLength >= height){
 				lengthSum += segmentLength/height;
-				u_list2.push(lengthSum);
+				u_list.push(lengthSum);
 			}			
 		}
-
-		return u_list2;
+		
+		return u_list;
+	
+		
 	}
 
 	normalizeArray(ls, v) {
@@ -97,7 +96,6 @@ export class BoundaryVertexData {
 
 		scope.vertexData = {}
 
-
 		this.type = 'BoundaryVertexData';
 
 		// extrude geo
@@ -109,7 +107,7 @@ export class BoundaryVertexData {
 			const uvs = [], uvs2 = [];
 
 			var polygon1 = boundary;
-			var len = polygon1.length;// polygon1 首尾相连，所以总长度减1
+			var len = polygon1.length;
 
 			for (let i = 0; i < len; i++) {
 				vertices.push(polygon1[i][0][0]);
@@ -129,14 +127,15 @@ export class BoundaryVertexData {
 			let StretchUv = uvGenerator1.InitUV2(vertices);
 			let TileUv = uvGenerator1.InitUV(vertices, parameters.extrudeHeight);
 
-			// 一遍存顶
+			// Save the top 
 			for (let i = 0; i < len; i++) {
 				uvs.push(TileUv[i]);
 				uvs.push(0);
 				uvs2.push(StretchUv[i]);
 				uvs2.push(0);
 			}
-			// 一遍存底
+			
+			// Save the bottom
 			for (let i = 0; i < len; i++) {
 				uvs.push(TileUv[i]);
 				uvs.push(1);
@@ -144,9 +143,9 @@ export class BoundaryVertexData {
 				uvs2.push(1);
 			}
 
-			// 计算法向量和索引
+			// Calculated vectors and indexes
 			for (let iy = 0; iy < 1; iy++) {
-				var gridX1 = len;// polygon1 首尾相连，所以总长度减1
+				var gridX1 = len;
 				for (let ix = 0; ix < gridX1 - 1; ix++) {
 					const a = ix + gridX1 * iy;
 					const b = ix + gridX1 * (iy + 1);
@@ -193,7 +192,7 @@ export class BoundaryVertexData {
 					indices.push(b, c, d);
 				}
 			}
-
+			
 			scope.vertexData = {
 				position: vertices,
 				normal: normals,
@@ -201,7 +200,7 @@ export class BoundaryVertexData {
 				uv2: uvs2,
 				index: indices
 			}
-
+			
 		}
 
 		extrudeGeo();
