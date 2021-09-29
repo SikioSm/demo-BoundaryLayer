@@ -1,13 +1,12 @@
 import { MathUtils } from '../libs/thing.module.js';
-
 class uvGenerator {
 
 	constructor() {
-	
+
 	}
 
 	// Stretch uv
-	InitUV2(vertices){			
+	InitUV2(vertices) {
 		let u_list_2 = [];
 		let lengthSum = 0;
 		let len = vertices.length * 0.5;// FENCE UPPER AND DOWNER
@@ -26,43 +25,39 @@ class uvGenerator {
 		this.lengthSum = lengthSum;
 		this.normalizeArray(u_list_2, lengthSum);
 		this.uv = u_list_2;
-		
+
 		return u_list_2;
 	}
 
 	// 1:1 Tile uv
-	InitUV(vertices , height){	
+	InitUV(vertices, height) {
 		let len = vertices.length * 0.5;
 		let u_list = [];
 		let lengthSum = 0;
-		
+
 		u_list.push(lengthSum);
-		for(let i = 0; i < len -3; i = i + 3 ){
-			
-			let dx = Math.abs(vertices[i + 3] - vertices[i]) ;
+		for (let i = 0; i < len - 3; i = i + 3) {
+			let dx = Math.abs(vertices[i + 3] - vertices[i]);
 			let dy = Math.abs(vertices[i + 4] - vertices[i + 1]);
 			let dz = Math.abs(vertices[i + 5] - vertices[i + 2]);
 			let segmentLength = Math.sqrt(dx * dx + dy * dy + dz * dz);
-			
-			
+
 			let remainder = segmentLength % height;
 
-			if(segmentLength < height){
-				if(remainder > 1){
-					remainder = remainder/height;
+			if (segmentLength < height) {
+				if (remainder > 1) {
+					remainder = remainder / height;
 				}
 				lengthSum += remainder;
 				u_list.push(lengthSum);
 			}
-			else if(segmentLength >= height){
-				lengthSum += segmentLength/height;
+			else if (segmentLength >= height) {
+				lengthSum += segmentLength / height;
 				u_list.push(lengthSum);
-			}			
+			}
 		}
-		
+
 		return u_list;
-	
-		
 	}
 
 	normalizeArray(ls, v) {
@@ -107,34 +102,36 @@ export class BoundaryVertexData {
 			const uvs = [], uvs2 = [];
 
 			var polygon1 = boundary;
-			var len = polygon1.length;
+			var len = polygon1[0].length;
 
 			for (let i = 0; i < len; i++) {
-				vertices.push(polygon1[i][0][0]);
-				vertices.push(polygon1[i][0][1]);
-				vertices.push((polygon1[i][0][2]));
+				vertices.push(polygon1[0][i][0]);
+				vertices.push(polygon1[0][i][1]);
+				vertices.push((polygon1[0][i][2]));
 			}
 			for (let i = 0; i < len; i++) {
 				// P1= P + VectorUp* height;
-				var excudePointx = polygon1[i][0][0] + polygon1[i][0][3] * parameters.extrudeHeight;
-				var excudePointy = polygon1[i][0][1] + polygon1[i][0][4] * parameters.extrudeHeight;
-				var excudePointz = polygon1[i][0][2] + polygon1[i][0][5] * parameters.extrudeHeight;
+				var excudePointx = polygon1[0][i][0] + polygon1[0][i][3] * parameters.extrudeHeight;
+				var excudePointy = polygon1[0][i][1] + polygon1[0][i][4] * parameters.extrudeHeight;
+				var excudePointz = polygon1[0][i][2] + polygon1[0][i][5] * parameters.extrudeHeight;
 				vertices.push((excudePointx));
 				vertices.push((excudePointy));
 				vertices.push((excudePointz));
 			}
-			
+
+			console.log(vertices);
+
 			let StretchUv = uvGenerator1.InitUV2(vertices);
 			let TileUv = uvGenerator1.InitUV(vertices, parameters.extrudeHeight);
 
-			// Save the top 
+			// Save the top
 			for (let i = 0; i < len; i++) {
 				uvs.push(TileUv[i]);
 				uvs.push(0);
 				uvs2.push(StretchUv[i]);
 				uvs2.push(0);
 			}
-			
+
 			// Save the bottom
 			for (let i = 0; i < len; i++) {
 				uvs.push(TileUv[i]);
@@ -192,7 +189,7 @@ export class BoundaryVertexData {
 					indices.push(b, c, d);
 				}
 			}
-			
+
 			scope.vertexData = {
 				position: vertices,
 				normal: normals,
@@ -200,7 +197,6 @@ export class BoundaryVertexData {
 				uv2: uvs2,
 				index: indices
 			}
-			
 		}
 
 		extrudeGeo();

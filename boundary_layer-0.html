@@ -26,7 +26,7 @@
     function parseData(text) {
         geojsonData = JSON.parse(text);
     }
-    loadFile('./json/boundary.json').then(parseData).then(addBoundary);
+    loadFile('./json/boundaryNew.json').then(parseData).then(addBoundary);
 
     function addBoundary() {        
         boundary = new BoundaryLayer(geojsonData); // TODO
